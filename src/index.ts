@@ -296,6 +296,7 @@ class VibeSoundtrackServer {
       },
       {
         capabilities: {
+          resources: {},
           tools: {},
         },
       }

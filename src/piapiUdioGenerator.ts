@@ -110,7 +110,7 @@ export class PiapiUdioGenerator extends BaseAudioGenerator {
    */
   private async pollForResult(taskId: string): Promise<string> {
     const maxAttempts = 60; // Maximum number of polling attempts
-    const pollingInterval = 3000; // Polling interval in milliseconds
+    const pollingInterval = 5000; // Polling interval in milliseconds
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
@@ -127,11 +127,13 @@ export class PiapiUdioGenerator extends BaseAudioGenerator {
           response.data &&
           response.data.data &&
           response.data.data.status === "completed" &&
-          response.data.data.result &&
-          response.data.data.result.audio_url
+          response.data.data.output &&
+          response.data.data.output.songs &&
+          response.data.data.output.songs.length > 0 &&
+          response.data.data.output.songs[0].song_path
         ) {
           console.log(`Task ${taskId} completed successfully`);
-          return response.data.data.result.audio_url;
+          return response.data.data.output.songs[0].song_path;
         }
 
         // If the task failed

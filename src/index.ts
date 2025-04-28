@@ -103,43 +103,42 @@ const { hasStableKey, hasPiapiKey } = checkApiKeys();
 // Check if DiffRhythm should be used
 const useDiffRhythm = shouldUseDiffRhythm();
 
-// Select the appropriate generator based on mode and available keys
-let audioGenerator: AudioGenerator;
-
-if (useDiffRhythm) {
-  // If DiffRhythm is explicitly requested, use it
-  if (hasPiapiKey) {
-    console.log(`Using PiAPI DiffRhythm for ${session.mode} music generation`);
-    audioGenerator = new DiffRhythmGenerator(session.mode);
+// Function to get the appropriate audio generator based on mode and available keys
+function getAudioGenerator(mode: GenerationMode): AudioGenerator {
+  if (useDiffRhythm) {
+    // If DiffRhythm is explicitly requested, use it
+    if (hasPiapiKey) {
+      console.log(`Using PiAPI DiffRhythm for ${mode} music generation`);
+      return new DiffRhythmGenerator(mode);
+    } else {
+      console.error(
+        "Error: PiAPI key required for DiffRhythm music generation"
+      );
+      process.exit(1);
+    }
+  } else if (mode === GenerationMode.Instrumental) {
+    // For instrumental mode, prefer Stability AI if available
+    if (hasStableKey) {
+      console.log("Using Stability AI for instrumental music generation");
+      return new StableAudioGenerator();
+    } else if (hasPiapiKey) {
+      console.log("Using PiAPI Udio for instrumental music generation");
+      return new PiapiUdioGenerator(GenerationMode.Instrumental);
+    } else {
+      console.error("Error: No API keys available for music generation");
+      process.exit(1);
+    }
   } else {
-    console.error("Error: PiAPI key required for DiffRhythm music generation");
-    process.exit(1);
-  }
-} else if (session.mode === GenerationMode.Instrumental) {
-  // For instrumental mode, prefer Stability AI if available
-  if (hasStableKey) {
-    console.log("Using Stability AI for instrumental music generation");
-    audioGenerator = new StableAudioGenerator();
-  } else if (hasPiapiKey) {
-    console.log("Using PiAPI Udio for instrumental music generation");
-    audioGenerator = new PiapiUdioGenerator(GenerationMode.Instrumental);
-  } else {
-    console.error("Error: No API keys available for music generation");
-    process.exit(1);
-  }
-} else {
-  // For lyrical mode, use PiAPI Udio
-  if (hasPiapiKey) {
-    console.log("Using PiAPI Udio for lyrical music generation");
-    audioGenerator = new PiapiUdioGenerator(GenerationMode.Lyrical);
-  } else {
-    console.error("Error: PiAPI key required for lyrical music generation");
-    process.exit(1);
+    // For lyrical mode, use PiAPI Udio
+    if (hasPiapiKey) {
+      console.log("Using PiAPI Udio for lyrical music generation");
+      return new PiapiUdioGenerator(GenerationMode.Lyrical);
+    } else {
+      console.error("Error: PiAPI key required for lyrical music generation");
+      process.exit(1);
+    }
   }
 }
-
-// Export the selected audio generator
-export { audioGenerator };
 
 // Type definitions for function arguments
 export interface SessionArgs {
@@ -161,7 +160,7 @@ export const isValidSessionArgs = (args: any): args is SessionArgs => {
 /**
  * Common logic for generating music
  * @param args Arguments including optional genre
- * @returns Result object with audioUrl and genre
+ * @returns Result object with prompt immediately, while audio generation continues in background
  */
 async function generateMusicLogic(
   args: SessionArgs
@@ -171,29 +170,45 @@ async function generateMusicLogic(
     session.genre = args.genre;
   }
 
+  // Update mode if provided in args, otherwise keep the current session mode
   if (args.mode) {
     session.mode = args.mode as GenerationMode;
   }
 
+  // Get the appropriate audio generator for the current mode
+  const audioGenerator = getAudioGenerator(session.mode);
+
   // Generate a prompt based on the context
   const prompt = buildPrompt(args.code, session.genre);
 
-  // Generate music using the audio generator
-  const audioUrl = await audioGenerator.generate(prompt, {
-    genre: session.genre,
-    mode: session.mode,
-    code: args.code,
-  });
-  session.currentTrackUrl = audioUrl;
+  // Start audio generation and playback in the background
+  // This runs asynchronously and doesn't block the response
+  (async () => {
+    try {
+      // Generate music using the audio generator
+      const audioUrl = await audioGenerator.generate(prompt, {
+        genre: session.genre,
+        mode: session.mode,
+        code: args.code,
+      });
+      session.currentTrackUrl = audioUrl;
 
-  // Play the audio
-  try {
-    await audioPlayer.play(audioUrl, true);
-  } catch (error) {
-    console.error("Error playing audio:", error);
-    // Continue even if playback fails
-  }
+      // Play the audio
+      try {
+        await audioPlayer.play(audioUrl, true);
+      } catch (error) {
+        console.error("Error playing audio:", error);
+        // Continue even if playback fails
+      }
+    } catch (error) {
+      console.error("Error in background music generation:", error);
+      // Since we're in a background task, we can only log errors
+      session.isActive = false;
+      session.currentTrackUrl = null;
+    }
+  })();
 
+  // Return the prompt immediately without waiting for audio generation
   return {
     prompt,
   };

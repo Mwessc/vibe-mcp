@@ -54,7 +54,7 @@ export abstract class BaseAudioGenerator implements AudioGenerator {
   constructor(
     apiKey: string,
     apiEndpoint: string,
-    audioCacheDir: string = path.join(os.tmpdir(), "vibe-soundtrack-cache")
+    audioCacheDir: string = path.join(os.tmpdir(), "vibe-cache")
   ) {
     this.apiKey = apiKey;
     this.apiEndpoint = apiEndpoint;

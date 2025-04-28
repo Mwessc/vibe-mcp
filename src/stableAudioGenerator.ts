@@ -3,12 +3,7 @@ import {
   BaseAudioGenerator,
   AudioGenerationOptions,
 } from "./audioGenerator.js";
-import {
-  buildPrompt,
-  DEFAULT_DURATION,
-  DEFAULT_STEPS,
-  DEFAULT_GENRE,
-} from "./utils.js";
+import { DEFAULT_DURATION, DEFAULT_STEPS } from "./utils.js";
 
 /**
  * Implementation of AudioGenerator using Stable Audio API

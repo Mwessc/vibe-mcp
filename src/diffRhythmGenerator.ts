@@ -11,7 +11,6 @@ import { DEFAULT_DURATION, DEFAULT_STEPS, DEFAULT_GENRE } from "./utils.js";
  */
 export class DiffRhythmGenerator extends BaseAudioGenerator {
   // apiKey and apiEndpoint are inherited from BaseAudioGenerator
-  private fetchEndpoint: string;
   private mode: GenerationMode;
 
   /**
@@ -19,18 +18,15 @@ export class DiffRhythmGenerator extends BaseAudioGenerator {
    * @param mode Music generation mode (GenerationMode.Instrumental or GenerationMode.Lyrical)
    * @param apiKey PiAPI API key (defaults to PIAPI_KEY env var)
    * @param apiEndpoint PiAPI task creation endpoint
-   * @param fetchEndpoint PiAPI fetch endpoint for checking task status
    */
   constructor(
     mode: GenerationMode = GenerationMode.Instrumental,
     apiKey: string = process.env.PIAPI_KEY || "",
-    apiEndpoint: string = "https://api.piapi.ai/api/v1/task",
-    fetchEndpoint: string = "https://api.piapi.ai/api/v1/task"
+    apiEndpoint: string = "https://api.piapi.ai/api/v1/task"
   ) {
     // Pass apiKey and apiEndpoint to the base class constructor
     super(apiKey, apiEndpoint);
     this.mode = mode;
-    this.fetchEndpoint = fetchEndpoint;
     // Validate the API key using the base class method
     this.validateApiKey("PiAPI DiffRhythm");
   }
@@ -166,7 +162,7 @@ export class DiffRhythmGenerator extends BaseAudioGenerator {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         // Make the API request to fetch the task status
-        const response = await axios.get(`${this.fetchEndpoint}/${taskId}`, {
+        const response = await axios.get(`${this.apiEndpoint}/${taskId}`, {
           headers: {
             "Content-Type": "application/json",
             "X-API-Key": this.apiKey,

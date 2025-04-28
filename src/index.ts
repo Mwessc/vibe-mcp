@@ -16,7 +16,12 @@ import { PiapiUdioGenerator } from "./piapiUdioGenerator.js";
 import { DiffRhythmGenerator } from "./diffRhythmGenerator.js";
 import { AudioGenerator, GenerationMode } from "./audioGenerator.js";
 import { audioPlayer } from "./playback.js";
-import { buildPrompt, DEFAULT_DURATION, DEFAULT_GENRE } from "./utils.js";
+import {
+  buildPrompt,
+  DEFAULT_DURATION,
+  DEFAULT_GENRE,
+  MAX_SNIPPET,
+} from "./utils.js";
 
 // Session state
 export interface SessionState {
@@ -320,14 +325,14 @@ class VibeSoundtrackServer {
           description: `Starts a new music generation session based on the current code context. The user might say they want to vibe or to create a soundtrack.
             The user can also specify a genre for the music but it is not required. Do not pass in a genre or ask for one if the user does not specify one.
             The user can also specify the mode for the music but it is not required. Do not pass in a mode or ask for one if the user does not specify one.
-            Pass in any code that you have in your context as a result of what you and the user have been working on together.
+            Pass in any snipped or summary of code (max ${MAX_SNIPPET} characters) that you have in your context as a result of what you and the user have been working on together.
             Vibes can be started in plan mode as well as act mode.`,
           inputSchema: inputSchema,
         },
         {
           name: "generate_more_music",
           description: `Generates more music as the previous chunk is almost finished.
-            This should be called as soon as there is more code to generate music for.
+            This should be called as soon as there is more code to generate music for -- pass in any snipped or summary of code (max ${MAX_SNIPPET} characters).
             Each track plays for ${DEFAULT_DURATION} seconds so you MUST call this tool as soon as you have more code to work with.
             If the user specified a genre when starting the session, pass it in again as an argument. If the user did not specify a genre, do not ask or pass in a genre as an argument.
             If the user specified a mode when starting the session, pass it in again as an argument. If the user did not specify a mode, do not ask or pass in a mode as an argument.`,
@@ -336,7 +341,7 @@ class VibeSoundtrackServer {
         {
           name: "stop_vibe_session",
           description: "Stops the music generation session",
-          inputSchema: {},
+          inputSchema: { type: "object" },
         },
       ],
     }));

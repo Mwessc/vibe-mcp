@@ -16,7 +16,6 @@ export class PiapiUdioGenerator extends BaseAudioGenerator {
    * Create a new PiapiUdioGenerator
    * @param apiKey PiAPI API key (defaults to PIAPI_KEY env var)
    * @param apiEndpoint PiAPI task creation endpoint
-   * @param fetchEndpoint PiAPI fetch endpoint
    * @param mode Music generation mode (GenerationMode.Instrumental or GenerationMode.Lyrical)
    */
   constructor(

@@ -1,20 +1,20 @@
 {
-  "name": "vibes",
+  "name": "vibe-mcp",
   "version": "0.1.0",
-  "description": "MCP server that generates music based on coding context",
+  "description": "MCP server that generates music based on code context",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "vibes": "dist/index.js"
+    "vibe-mcp": "build/index.js"
   },
   "files": [
-    "dist"
+    "build"
   ],
   "scripts": {
-    "build": "tsc && node -e \"require('fs').chmodSync('dist/index.js', '755')\"",
-    "start": "node dist/index.js",
-    "inspector": "npx @modelcontextprotocol/inspector dist/index.js"
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "start": "node build/index.js",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "0.7.0",

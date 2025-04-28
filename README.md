@@ -59,9 +59,9 @@ To use this as an MCP server with Cline, you need to add it to your MCP settings
    ```json
    {
      "mcpServers": {
-       "vibe-soundtrack": {
+       "vibe-mcp": {
          "command": "node",
-         "args": ["/path/to/vibe-soundtrack/dist/index.js"],
+         "args": ["/path/to/vibe-mcp/build/index.js"],
          "env": {
            "STABLE_AUDIO_KEY": "your_api_key_here"
          }
@@ -81,7 +81,7 @@ import {
   startSessionLogic,
   generateMoreLogic,
   stopSessionLogic,
-} from "./dist/index.js";
+} from "./build/index.js";
 
 // Start a session
 const result = await startSessionLogic(
@@ -94,7 +94,7 @@ console.log(result);
 Or run the included test script:
 
 ```bash
-./dist/test.js
+./build/test.js
 ```
 
 ## Tools

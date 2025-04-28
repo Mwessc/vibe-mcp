@@ -51,7 +51,9 @@ export class PiapiUdioGenerator extends BaseAudioGenerator {
       const input = {
         prompt,
         ...(mode === GenerationMode.Lyrical
-          ? { gpt_description_prompt: prompt }
+          ? {
+              gpt_description_prompt: `Write a song based on the following code: ${options?.code}, describing what exactly what it's doing`,
+            }
           : {}),
         lyrics_type: lyrics_type,
       };

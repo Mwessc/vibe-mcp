@@ -175,10 +175,12 @@ export class DiffRhythmGenerator extends BaseAudioGenerator {
           response.data.data &&
           response.data.data.status === "completed" &&
           response.data.data.output &&
-          response.data.data.output.audio_url
+          response.data.data.output.songs &&
+          response.data.data.output.songs.length > 0 &&
+          response.data.data.output.songs[0].song_path
         ) {
           console.log(`Task ${taskId} completed successfully`);
-          return response.data.data.output.audio_url;
+          return response.data.data.output.songs[0].song_path;
         }
 
         // If the task failed

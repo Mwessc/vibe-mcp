@@ -147,6 +147,34 @@ function stringToBinary(str: string): string {
 }
 
 /**
+ * Calculates the Shannon entropy of a string.
+ * Higher entropy indicates more randomness/complexity.
+ * @param str The input string
+ * @returns Entropy value (typically between 0-5 for code)
+ */
+export function calculateEntropy(str: string): number {
+  if (!str || str.length === 0) return 0;
+
+  // Count character frequencies
+  const frequencies: Record<string, number> = {};
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    frequencies[char] = (frequencies[char] || 0) + 1;
+  }
+
+  // Calculate entropy using Shannon's formula: -sum(p_i * log2(p_i))
+  let entropy = 0;
+  const len = str.length;
+
+  for (const char in frequencies) {
+    const probability = frequencies[char] / len;
+    entropy -= probability * Math.log2(probability);
+  }
+
+  return entropy;
+}
+
+/**
  * Analyzes the binary representation of code for mood characteristics.
  * This is a conceptual example using simple binary analysis.
  * @param code The code snippet to analyze
@@ -216,8 +244,136 @@ export function analyzeCodeBinaryForMood(code: string): string[] {
     moods.push("stable", "consistent", "steady");
   }
 
+  // 4. Entropy-based moods
+  const entropy = calculateEntropy(code);
+  if (entropy > 4.5) {
+    moods.push("complex", "chaotic", "unpredictable");
+  } else if (entropy < 3.5) {
+    moods.push("ordered", "structured", "predictable");
+  }
+
   // Return unique moods derived from binary analysis
   return Array.from(new Set(moods));
+}
+
+/**
+ * Simulates AST (Abstract Syntax Tree) analysis using regex patterns
+ * to understand code structure at a deeper level.
+ * @param code The code snippet to analyze
+ * @returns An object with various structural metrics
+ */
+export function analyzeCodeStructure(code: string): Record<string, number> {
+  const result: Record<string, number> = {
+    // Node type densities
+    functionDensity: 0,
+    conditionalDensity: 0,
+    loopDensity: 0,
+    variableDensity: 0,
+    commentDensity: 0,
+
+    // Structural metrics
+    nestingDepth: 0,
+    branchingFactor: 0,
+    cyclomaticDensity: 0,
+
+    // Pattern metrics
+    recursionScore: 0,
+    asyncPatternScore: 0,
+    functionalPatternScore: 0,
+
+    // Information metrics
+    entropy: 0,
+    compressionRatio: 0,
+  };
+
+  // Calculate code length for density calculations
+  const codeLength = code.length || 1; // Avoid division by zero
+  const lines = code.split(/\r?\n/);
+  const lineCount = lines.length || 1;
+
+  // 1. Count various node types
+  const functionMatches = code.match(/\bfunction\b|\s=>\s|\bclass\b/g) || [];
+  const conditionalMatches =
+    code.match(/\bif\b|\bswitch\b|\?.*:|\bcase\b/g) || [];
+  const loopMatches = code.match(/\bfor\b|\bwhile\b|\bdo\b|\bforeach\b/g) || [];
+  const variableMatches = code.match(/\bconst\b|\blet\b|\bvar\b/g) || [];
+  const commentMatches = code.match(/\/\/.*$|\/\*[\s\S]*?\*\//gm) || [];
+
+  // Calculate densities (occurrences per 1000 chars)
+  result.functionDensity = (functionMatches.length / codeLength) * 1000;
+  result.conditionalDensity = (conditionalMatches.length / codeLength) * 1000;
+  result.loopDensity = (loopMatches.length / codeLength) * 1000;
+  result.variableDensity = (variableMatches.length / codeLength) * 1000;
+  result.commentDensity = (commentMatches.length / codeLength) * 1000;
+
+  // 2. Analyze nesting depth
+  let maxDepth = 0;
+  let currentDepth = 0;
+
+  for (const char of code) {
+    if (char === "{" || char === "(" || char === "[") {
+      currentDepth++;
+      maxDepth = Math.max(maxDepth, currentDepth);
+    } else if (char === "}" || char === ")" || char === "]") {
+      currentDepth = Math.max(0, currentDepth - 1); // Prevent negative depth
+    }
+  }
+
+  result.nestingDepth = maxDepth;
+
+  // 3. Calculate branching factor (decision points per function)
+  const functionCount = functionMatches.length || 1; // Avoid division by zero
+  const decisionPoints = conditionalMatches.length + loopMatches.length;
+  result.branchingFactor = decisionPoints / functionCount;
+
+  // 4. Cyclomatic density (cyclomatic complexity per line of code)
+  const cyclomatic = 1 + decisionPoints; // Base complexity + decision points
+  result.cyclomaticDensity = cyclomatic / lineCount;
+
+  // 5. Detect recursion patterns
+  // Extract function names and check if they call themselves
+  const functionNameRegex =
+    /function\s+(\w+)|const\s+(\w+)\s*=\s*(?:async\s*)?\(/g;
+  let match;
+  let recursionCount = 0;
+
+  while ((match = functionNameRegex.exec(code)) !== null) {
+    const fnName = match[1] || match[2];
+    if (fnName) {
+      const callRegex = new RegExp(`\\b${fnName}\\s*\\(`, "g");
+      // Count calls after the function definition
+      const afterDefCode = code.slice(match.index + match[0].length);
+      const calls = afterDefCode.match(callRegex) || [];
+      recursionCount += calls.length;
+    }
+  }
+
+  result.recursionScore = recursionCount / (functionCount || 1);
+
+  // 6. Detect async patterns
+  const asyncMatches =
+    code.match(/\basync\b|\bawait\b|\bPromise\b|\b\.then\b/g) || [];
+  result.asyncPatternScore = asyncMatches.length / (functionCount || 1);
+
+  // 7. Detect functional programming patterns
+  const functionalMatches =
+    code.match(/\bmap\b|\bfilter\b|\breduce\b|\bcompose\b|\bcurry\b/g) || [];
+  result.functionalPatternScore =
+    functionalMatches.length / (functionCount || 1);
+
+  // 8. Information theory metrics
+  result.entropy = calculateEntropy(code);
+
+  // Simulate compression ratio using character frequency as a simple approximation
+  const charFreq: Record<string, number> = {};
+  for (const char of code) {
+    charFreq[char] = (charFreq[char] || 0) + 1;
+  }
+
+  const uniqueChars = Object.keys(charFreq).length;
+  result.compressionRatio = uniqueChars / Math.sqrt(codeLength);
+
+  return result;
 }
 
 /**
@@ -397,53 +553,302 @@ export function analyzeSentiment(code: string): number {
   return (positiveCount - negativeCount) / (positiveCount + negativeCount);
 }
 
+// Define genre characteristics for vector similarity matching
+interface GenreCharacteristics {
+  name: string;
+  complexity: number; // 0-1 scale
+  rhythm: number; // 0-1 scale (low = ambient, high = beat-driven)
+  energy: number; // 0-1 scale
+  experimentalness: number; // 0-1 scale
+  structure: number; // 0-1 scale (low = free-form, high = structured)
+  emotionality: number; // 0-1 scale (low = cerebral, high = emotional)
+  density: number; // 0-1 scale (low = sparse, high = dense)
+  tags: string[]; // Additional descriptive tags
+}
+
+// Expanded genre map with characteristics for vector similarity
+const GENRE_CHARACTERISTICS: GenreCharacteristics[] = [
+  // Electronic genres
+  {
+    name: "ambient",
+    complexity: 0.3,
+    rhythm: 0.2,
+    energy: 0.2,
+    experimentalness: 0.5,
+    structure: 0.3,
+    emotionality: 0.6,
+    density: 0.3,
+    tags: ["atmospheric", "spacious", "textural", "meditative"],
+  },
+  {
+    name: "lo-fi house",
+    complexity: 0.5,
+    rhythm: 0.7,
+    energy: 0.5,
+    experimentalness: 0.4,
+    structure: 0.6,
+    emotionality: 0.5,
+    density: 0.6,
+    tags: ["dusty", "warm", "nostalgic", "groovy"],
+  },
+  {
+    name: "synthwave",
+    complexity: 0.6,
+    rhythm: 0.7,
+    energy: 0.6,
+    experimentalness: 0.3,
+    structure: 0.7,
+    emotionality: 0.7,
+    density: 0.7,
+    tags: ["retro", "80s", "cinematic", "driving"],
+  },
+  {
+    name: "IDM",
+    complexity: 0.9,
+    rhythm: 0.8,
+    energy: 0.7,
+    experimentalness: 0.9,
+    structure: 0.5,
+    emotionality: 0.5,
+    density: 0.8,
+    tags: ["glitchy", "complex", "cerebral", "intricate"],
+  },
+  {
+    name: "techno",
+    complexity: 0.6,
+    rhythm: 0.9,
+    energy: 0.8,
+    experimentalness: 0.5,
+    structure: 0.8,
+    emotionality: 0.4,
+    density: 0.7,
+    tags: ["hypnotic", "driving", "mechanical", "repetitive"],
+  },
+  {
+    name: "deep house",
+    complexity: 0.5,
+    rhythm: 0.8,
+    energy: 0.6,
+    experimentalness: 0.3,
+    structure: 0.7,
+    emotionality: 0.6,
+    density: 0.6,
+    tags: ["groovy", "soulful", "smooth", "melodic"],
+  },
+  {
+    name: "drum and bass",
+    complexity: 0.7,
+    rhythm: 0.9,
+    energy: 0.9,
+    experimentalness: 0.6,
+    structure: 0.7,
+    emotionality: 0.5,
+    density: 0.8,
+    tags: ["fast", "energetic", "complex", "intense"],
+  },
+  {
+    name: "vaporwave",
+    complexity: 0.4,
+    rhythm: 0.5,
+    energy: 0.3,
+    experimentalness: 0.7,
+    structure: 0.4,
+    emotionality: 0.6,
+    density: 0.5,
+    tags: ["nostalgic", "dreamy", "surreal", "retro"],
+  },
+
+  // Jazz-influenced genres
+  {
+    name: "jazz",
+    complexity: 0.8,
+    rhythm: 0.6,
+    energy: 0.5,
+    experimentalness: 0.6,
+    structure: 0.4,
+    emotionality: 0.7,
+    density: 0.7,
+    tags: ["improvisational", "sophisticated", "expressive", "dynamic"],
+  },
+  {
+    name: "acid jazz",
+    complexity: 0.7,
+    rhythm: 0.7,
+    energy: 0.6,
+    experimentalness: 0.5,
+    structure: 0.5,
+    emotionality: 0.6,
+    density: 0.7,
+    tags: ["funky", "groovy", "eclectic", "soulful"],
+  },
+
+  // Orchestral/cinematic genres
+  {
+    name: "orchestral",
+    complexity: 0.8,
+    rhythm: 0.4,
+    energy: 0.7,
+    experimentalness: 0.3,
+    structure: 0.8,
+    emotionality: 0.9,
+    density: 0.8,
+    tags: ["dramatic", "emotional", "grand", "dynamic"],
+  },
+  {
+    name: "cinematic",
+    complexity: 0.7,
+    rhythm: 0.5,
+    energy: 0.7,
+    experimentalness: 0.4,
+    structure: 0.7,
+    emotionality: 0.9,
+    density: 0.7,
+    tags: ["dramatic", "emotional", "atmospheric", "narrative"],
+  },
+
+  // Pop-influenced genres
+  {
+    name: "indie pop",
+    complexity: 0.5,
+    rhythm: 0.6,
+    energy: 0.6,
+    experimentalness: 0.4,
+    structure: 0.8,
+    emotionality: 0.7,
+    density: 0.6,
+    tags: ["catchy", "melodic", "accessible", "emotive"],
+  },
+  {
+    name: "dream pop",
+    complexity: 0.5,
+    rhythm: 0.5,
+    energy: 0.4,
+    experimentalness: 0.5,
+    structure: 0.6,
+    emotionality: 0.8,
+    density: 0.7,
+    tags: ["ethereal", "dreamy", "hazy", "melodic"],
+  },
+
+  // Experimental genres
+  {
+    name: "glitch",
+    complexity: 0.8,
+    rhythm: 0.7,
+    energy: 0.6,
+    experimentalness: 0.9,
+    structure: 0.3,
+    emotionality: 0.4,
+    density: 0.7,
+    tags: ["broken", "experimental", "digital", "abstract"],
+  },
+  {
+    name: "dark ambient",
+    complexity: 0.5,
+    rhythm: 0.2,
+    energy: 0.3,
+    experimentalness: 0.7,
+    structure: 0.3,
+    emotionality: 0.7,
+    density: 0.6,
+    tags: ["atmospheric", "ominous", "textural", "mysterious"],
+  },
+];
+
 /**
- * Selects a genre based on code analysis
+ * Selects a genre based on deep code analysis using vector similarity
  * @param code The code snippet to analyze
  * @returns A suitable music genre
  */
 export function selectGenre(code: string): string {
+  // Get traditional metrics
   const language = detectLanguage(code);
   const complexity = analyzeComplexity(code);
   const style = analyzeCodeStyle(code);
   const sentiment = analyzeSentiment(code);
+  const binaryMoods = analyzeCodeBinaryForMood(code);
 
-  // Get potential genres based on language
-  const potentialGenres =
+  // Get deeper structural metrics
+  const structure = analyzeCodeStructure(code);
+  const entropy = calculateEntropy(code);
+
+  // Create a feature vector for the code
+  const codeVector = {
+    // Complexity metrics
+    complexity: complexity,
+    nestingDepth: Math.min(structure.nestingDepth / 10, 1), // Normalize to 0-1
+    cyclomaticDensity: Math.min(structure.cyclomaticDensity / 5, 1), // Normalize to 0-1
+
+    // Rhythm/energy metrics
+    rhythm: structure.loopDensity / 10 + structure.asyncPatternScore / 2, // Loops and async patterns suggest rhythm
+    energy: Math.min(
+      structure.conditionalDensity / 10 + structure.branchingFactor / 5,
+      1
+    ),
+
+    // Experimentalness metrics
+    experimentalness: Math.min(entropy / 5, 1), // Higher entropy = more experimental
+
+    // Structure metrics
+    structure: 1 - Math.min(entropy / 5, 1), // Lower entropy = more structured
+
+    // Emotionality metrics
+    emotionality: Math.max(0, sentiment + 0.5), // Convert -1 to 1 range to 0-1 range
+
+    // Density metrics
+    density: Math.min(
+      (structure.functionDensity + structure.variableDensity) / 20,
+      1
+    ),
+  };
+
+  // Calculate similarity scores with each genre
+  const genreScores = GENRE_CHARACTERISTICS.map((genre) => {
+    // Calculate Euclidean distance (lower is more similar)
+    const distance = Math.sqrt(
+      Math.pow(codeVector.complexity - genre.complexity, 2) +
+        Math.pow(codeVector.rhythm - genre.rhythm, 2) +
+        Math.pow(codeVector.energy - genre.energy, 2) +
+        Math.pow(codeVector.experimentalness - genre.experimentalness, 2) +
+        Math.pow(codeVector.structure - genre.structure, 2) +
+        Math.pow(codeVector.emotionality - genre.emotionality, 2) +
+        Math.pow(codeVector.density - genre.density, 2)
+    );
+
+    // Convert distance to similarity score (higher is more similar)
+    const similarity = 1 / (1 + distance);
+
+    return {
+      genre: genre.name,
+      score: similarity,
+    };
+  });
+
+  // Sort by similarity score (descending)
+  genreScores.sort((a, b) => b.score - a.score);
+
+  // Apply language bias (boost genres traditionally associated with the language)
+  const languageGenres =
     LANGUAGE_TO_GENRE[language as keyof typeof LANGUAGE_TO_GENRE] ||
     LANGUAGE_TO_GENRE.unknown;
 
-  // Select genre based on dominant code style
-  let genreIndex = 0;
-  const styleEntries = Object.entries(style);
-  if (styleEntries.length > 0) {
-    // Sort style characteristics by score (descending)
-    styleEntries.sort((a, b) => b[1] - a[1]);
-    const dominantStyle = styleEntries[0][0];
+  // Find the highest scoring genre that's also in the language's traditional genres
+  for (const langGenre of languageGenres) {
+    const matchingGenre = genreScores.find(
+      (g) =>
+        g.genre === langGenre ||
+        GENRE_CHARACTERISTICS.find((gc) => gc.name === g.genre)?.tags.includes(
+          langGenre
+        )
+    );
 
-    // Use dominant style to influence genre selection
-    if (dominantStyle === "functional" || dominantStyle === "declarative") {
-      genreIndex = 0; // First genre (usually more ambient/chill)
-    } else if (
-      dominantStyle === "objectOriented" ||
-      dominantStyle === "dataHeavy"
-    ) {
-      genreIndex = 1; // Second genre (usually more structured)
-    } else {
-      genreIndex = 2 % potentialGenres.length; // Third genre (usually more energetic)
-    }
-
-    // Adjust for sentiment
-    if (sentiment > 0.3) {
-      // More positive sentiment might shift to a more upbeat genre
-      genreIndex = (genreIndex + 1) % potentialGenres.length;
-    } else if (sentiment < -0.3) {
-      // More negative sentiment might shift to a more atmospheric/dark genre
-      genreIndex = Math.max(0, genreIndex - 1);
+    if (matchingGenre && matchingGenre.score > 0.7 * genreScores[0].score) {
+      return matchingGenre.genre;
     }
   }
 
-  return potentialGenres[genreIndex];
+  // If no strong match with language genres, return the highest scoring genre
+  return genreScores[0].genre;
 }
 
 /**

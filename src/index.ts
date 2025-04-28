@@ -340,7 +340,7 @@ class VibeSoundtrackServer {
           description: `Starts a new music generation session based on the current code context. The user might say they want to vibe or to create a soundtrack.
             The user can also specify a genre for the music but it is not required. Do not pass in a genre or ask for one if the user does not specify one.
             The user can also specify the mode for the music but it is not required. Do not pass in a mode or ask for one if the user does not specify one.
-            Pass in any snipped or summary of code (max ${MAX_SNIPPET} characters) that you have in your context as a result of what you and the user have been working on together.
+            Pass in any snippet or summary of code (max ${MAX_SNIPPET} characters) that you have in your context as a result of what you and the user have been working on together.
             Vibes can be started in plan mode as well as act mode.`,
           inputSchema: inputSchema,
         },

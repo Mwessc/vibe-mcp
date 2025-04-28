@@ -56,8 +56,10 @@ To use this as an MCP server with Cline, you need to add it to your MCP settings
 1. Edit your MCP settings file:
 
    ```bash
-   # For Cursor
+   # For VSCode
    vim ~/Library/Application\ Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+   # For Cursor
+   vim ~/Library/Application\ Support/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
    # For Claude Desktop
    vim ~/Library/Application\ Support/Claude/claude_desktop_config.json
    ```
@@ -68,6 +70,11 @@ To use this as an MCP server with Cline, you need to add it to your MCP settings
    {
      "mcpServers": {
        "vibe-mcp": {
+         "autoApprove": [
+           "start_vibe_session",
+           "generate_more_music",
+           "stop_vibe_session"
+         ],
          "command": "node",
          "args": ["/path/to/vibe-mcp/build/index.js"],
          "env": {

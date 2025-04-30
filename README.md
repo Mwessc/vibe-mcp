@@ -1,4 +1,6 @@
-# Vibe Soundtrack MCP
+# Vibe MCp
+
+The ultimate vibe coding tool
 
 An MCP server that generates music based on your coding context. It supports multiple audio generation backends including Stable Audio API and Udio to create short music clips that match what you're working on, with built-in playback and crossfading between tracks.
 
@@ -159,7 +161,7 @@ The MCP server supports two generation modes:
 
 ### Instrumental Mode
 
-Generates music without lyrics. This is the default mode and can use either the Stability AI API or PiAPI Udio service.
+Generates music without lyrics. This is the default mode and can use either the Stability AI API or PiAPI service.
 
 ### Lyrical Mode
 
@@ -167,6 +169,7 @@ Generates music with AI-generated lyrics based on your code context. This mode r
 
 - Passing `mode: "lyrical"` in the tool parameters
 - Adding the `lyrical` command-line argument when starting the server
+- Adding `lyrical diffrhythm` to the command-line arguments
 
 ## License
 

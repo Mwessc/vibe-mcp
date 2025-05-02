@@ -108,6 +108,7 @@ Starts a new music generation session based on the current coding context.
 - `code` (required): The current coding context from the user's session
 - `genre` (optional): Music genre to generate (e.g., "lo-fi house", "synthwave", "ambient")
 - `mode` (optional): The mode to generate music in (e.g., 'instrumental', 'lyrical')
+- `language` (optional): The programming language of the code (e.g., 'javascript', 'python', 'rust')
 
 **Returns:**
 
@@ -122,6 +123,7 @@ Generates more music as the previous chunk is almost finished.
 - `code` (required): The current coding context from the user's session
 - `genre` (optional): Music genre to generate (defaults to the genre used in the session)
 - `mode` (optional): The mode to generate music in (defaults to the mode used in the session)
+- `language` (optional): The programming language of the code (defaults to the language used in the session)
 
 **Returns:**
 

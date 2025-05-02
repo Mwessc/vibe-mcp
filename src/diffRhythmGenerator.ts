@@ -4,7 +4,7 @@ import {
   AudioGenerationOptions,
   GenerationMode,
 } from "./audioGenerator.js";
-import { DEFAULT_DURATION, DEFAULT_STEPS, DEFAULT_GENRE } from "./utils.js";
+import { DEFAULT_DURATION, DEFAULT_STEPS } from "./utils.js";
 
 /**
  * Implementation of AudioGenerator using PiAPI's DiffRhythm API
@@ -87,7 +87,7 @@ export class DiffRhythmGenerator extends BaseAudioGenerator {
       // Extract style from prompt
       const genreMatch = prompt.match(/Genre: (.*?)(?:\n|$)/);
       const moodMatch = prompt.match(/Mood: (.*?)(?:\n|$)/);
-      const genre = genreMatch ? genreMatch[1] : DEFAULT_GENRE;
+      const genre = genreMatch ? genreMatch[1] : "";
       const mood = moodMatch ? moodMatch[1] : "";
 
       // Combine genre and mood for style prompt

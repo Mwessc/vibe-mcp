@@ -16,27 +16,24 @@ import { PiapiUdioGenerator } from "./piapiUdioGenerator.js";
 import { DiffRhythmGenerator } from "./diffRhythmGenerator.js";
 import { AudioGenerator, GenerationMode } from "./audioGenerator.js";
 import { audioPlayer } from "./playback.js";
-import {
-  buildPrompt,
-  DEFAULT_DURATION,
-  DEFAULT_GENRE,
-  MAX_SNIPPET,
-} from "./utils.js";
+import { buildPrompt, DEFAULT_DURATION, MAX_SNIPPET } from "./utils.js";
 
 // Session state
 export interface SessionState {
   isActive: boolean;
   currentTrackUrl: string | null;
-  genre: string;
   mode: GenerationMode;
+  genre?: string;
+  language?: string;
 }
 
 // Global session state
 export const session: SessionState = {
   isActive: false,
   currentTrackUrl: null,
-  genre: DEFAULT_GENRE,
   mode: GenerationMode.Instrumental, // Default to instrumental
+  genre: undefined,
+  language: undefined, // Default language
 };
 
 const inputSchema = {
@@ -47,6 +44,11 @@ const inputSchema = {
       description: "The current coding context from the user's session",
       required: true,
     },
+    language: {
+      type: "string",
+      description:
+        "The programming language of the code (e.g., 'javascript', 'python', 'java')",
+    },
     genre: {
       type: "string",
       description:
@@ -55,7 +57,7 @@ const inputSchema = {
     mode: {
       type: "string",
       description:
-        "The mode to generate music in (e.g., 'instrumental', 'lyrical')",
+        "The optional mode to generate music in (e.g., 'instrumental', 'lyrical') -- only if the user specifies",
     },
   },
 };
@@ -145,6 +147,7 @@ export interface SessionArgs {
   code: string;
   genre?: string;
   mode?: string;
+  language?: string;
 }
 
 // Validate arguments for start_vibe_session
@@ -175,11 +178,21 @@ async function generateMusicLogic(
     session.mode = args.mode as GenerationMode;
   }
 
+  // Update language if provided
+  if (args.language) {
+    session.language = args.language;
+    console.log(`Language provided by client: ${args.language}`);
+  } else {
+    console.log(
+      `No language provided by client, using default: ${session.language}`
+    );
+  }
+
   // Get the appropriate audio generator for the current mode
   const audioGenerator = getAudioGenerator(session.mode);
 
   // Generate a prompt based on the context
-  const prompt = buildPrompt(args.code, session.genre);
+  const prompt = buildPrompt(args.code, session.genre, session.language);
 
   // Start audio generation and playback in the background
   // This runs asynchronously and doesn't block the response
@@ -338,6 +351,7 @@ class VibeSoundtrackServer {
         {
           name: "start_vibe_session",
           description: `Starts a new music generation session based on the current code context. The user might say they want to vibe or to create a soundtrack.
+            The user can also specify a programming language for the code but it is not required. Do not pass in a programming language or ask for one if the user does not specify one.
             The user can also specify a genre for the music but it is not required. Do not pass in a genre or ask for one if the user does not specify one.
             The user can also specify the mode for the music but it is not required. Do not pass in a mode or ask for one if the user does not specify one.
             Pass in any snippet or summary of code (max ${MAX_SNIPPET} characters) that you have in your context as a result of what you and the user have been working on together.
@@ -349,6 +363,7 @@ class VibeSoundtrackServer {
           description: `Generates more music as the previous chunk is almost finished.
             This should be called as soon as there is more code to generate music for -- pass in any snipped or summary of code (max ${MAX_SNIPPET} characters).
             Each track plays for ${DEFAULT_DURATION} seconds so you MUST call this tool as soon as you have more code to work with.
+            If the user specified a programming language when starting the session, pass it in again as an argument. If the user did not specify a programming language, do not ask or pass in a programming language as an argument.
             If the user specified a genre when starting the session, pass it in again as an argument. If the user did not specify a genre, do not ask or pass in a genre as an argument.
             If the user specified a mode when starting the session, pass it in again as an argument. If the user did not specify a mode, do not ask or pass in a mode as an argument.`,
           inputSchema: inputSchema,
@@ -477,5 +492,38 @@ class VibeSoundtrackServer {
   }
 }
 
-const server = new VibeSoundtrackServer();
-server.run().catch(console.error);
+// Test function to verify language parameter handling
+async function testLanguageParameter() {
+  console.log("=== Testing Language Parameter Handling ===");
+
+  // Test with Rust language
+  const testArgs: SessionArgs = {
+    code: "extern crate piston_window;",
+    language: "rust",
+  };
+
+  console.log("Testing with language: rust");
+  const result = await generateMusicLogic(testArgs);
+  console.log(
+    "Test completed. Check logs above for language and genre selection."
+  );
+
+  return result;
+}
+
+// Run the test if the --test flag is provided
+if (process.argv.includes("--test")) {
+  testLanguageParameter()
+    .then(() => {
+      console.log("Test completed, exiting.");
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error("Test failed:", error);
+      process.exit(1);
+    });
+} else {
+  // Normal server startup
+  const server = new VibeSoundtrackServer();
+  server.run().catch(console.error);
+}

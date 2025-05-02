@@ -6,8 +6,6 @@
 export const MAX_SNIPPET = 1200; // chars
 export const DEFAULT_DURATION = 180; // seconds
 export const DEFAULT_STEPS = 30; // generation steps
-export const DEFAULT_BPM = 120; // default beats per minute
-export const DEFAULT_GENRE = "lo-fi house"; // default music genre
 
 // Language detection patterns
 const LANGUAGE_PATTERNS = {
@@ -758,11 +756,13 @@ const GENRE_CHARACTERISTICS: GenreCharacteristics[] = [
 /**
  * Selects a genre based on deep code analysis using vector similarity
  * @param code The code snippet to analyze
+ * @param language Optional override for the programming language
  * @returns A suitable music genre
  */
-export function selectGenre(code: string): string {
+export function selectGenre(code: string, language?: string): string {
   // Get traditional metrics
-  const language = detectLanguage(code);
+  const detectedLanguage = detectLanguage(code);
+  const finalLanguage = language || detectedLanguage;
   const complexity = analyzeComplexity(code);
   const style = analyzeCodeStyle(code);
   const sentiment = analyzeSentiment(code);
@@ -827,9 +827,35 @@ export function selectGenre(code: string): string {
   // Sort by similarity score (descending)
   genreScores.sort((a, b) => b.score - a.score);
 
-  // Apply language bias (boost genres traditionally associated with the language)
+  // If language is explicitly provided, prioritize genres associated with that language
+  // Add debug logging
+  console.log(
+    `selectGenre called with language: ${language}, finalLanguage: ${finalLanguage}`
+  );
+
+  // Check if language is provided and is a non-empty string
+  if (typeof language === "string" && language.trim() !== "") {
+    // Convert to lowercase for case-insensitive comparison
+    const lowerLanguage = language.toLowerCase();
+
+    // Find the matching language key in LANGUAGE_TO_GENRE
+    const languageKey = Object.keys(LANGUAGE_TO_GENRE).find(
+      (key) => key.toLowerCase() === lowerLanguage
+    );
+
+    if (languageKey) {
+      const genres = LANGUAGE_TO_GENRE[languageKey];
+      console.log(`Found genres for ${languageKey}: ${genres.join(", ")}`);
+      return genres[0]; // Return the first genre for this language
+    }
+
+    console.log(`No genres found for language: ${language}`);
+  }
+
+  // If no language is explicitly provided or no genres are associated with it,
+  // fall back to the vector similarity approach
   const languageGenres =
-    LANGUAGE_TO_GENRE[language as keyof typeof LANGUAGE_TO_GENRE] ||
+    LANGUAGE_TO_GENRE[finalLanguage as keyof typeof LANGUAGE_TO_GENRE] ||
     LANGUAGE_TO_GENRE.unknown;
 
   // Find the highest scoring genre that's also in the language's traditional genres
@@ -1045,17 +1071,26 @@ export function suggestInstrumentation(code: string): string[] {
  * Builds a prompt for audio generation based on code context
  * @param code The code snippet to generate music for
  * @param genre Optional override for the music genre
+ * @param language Optional override for the programming language
  * @returns A formatted prompt for audio generation
  */
-export function buildPrompt(code: string, genre?: string): string {
+export function buildPrompt(
+  code: string,
+  genre?: string,
+  language?: string
+): string {
   const trimmedCode = code.slice(0, MAX_SNIPPET);
 
   // Analyze code to determine musical characteristics
-  const detectedGenre = selectGenre(trimmedCode);
+  console.log(`buildPrompt called with language: ${language}`);
+  const detectedGenre = selectGenre(trimmedCode, language);
+  console.log(`selectGenre returned: ${detectedGenre}`);
   const finalGenre = genre || detectedGenre;
+  console.log(`Final genre selected: ${finalGenre}`);
   const bpm = selectBPM(trimmedCode);
   const mood = selectMood(trimmedCode).join(", ");
-  const language = detectLanguage(trimmedCode);
+  const detectedLanguage = detectLanguage(trimmedCode);
+  const finalLanguage = language || detectedLanguage;
   const complexity = analyzeComplexity(trimmedCode);
   const sentiment = analyzeSentiment(trimmedCode); // Get sentiment score
   const instrumentation = suggestInstrumentation(trimmedCode);
@@ -1074,11 +1109,11 @@ Mood: ${mood}
 Tempo: ${bpm} BPM
 Style: ${complexity > 0.6 ? "complex and intricate" : "smooth and flowing"}
 Sentiment: ${sentimentDescription}
-Inspiration: ${language} code that is ${
+Inspiration: ${finalLanguage} code that is ${
     complexity > 0.5 ? "sophisticated and detailed" : "clean and elegant"
   }
 Instrumentation: ${instrumentation.join(", ")}
-The music should capture the essence of coding in ${language}, with a ${mood} atmosphere.
+The music should capture the essence of coding in ${finalLanguage}, with a ${mood} atmosphere.
 CODE CONTEXT:
 ${trimmedCode}`;
 }
